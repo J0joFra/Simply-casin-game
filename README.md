@@ -1,1 +1,1 @@
-# Simply-casin-game
+# Simply-casino-game
