@@ -1,76 +1,98 @@
-import java.util.Scanner;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-public class VaiAlCasino {
-    public static void main(String[] args)
-	{
-		Scanner in = new Scanner(System.in);
+public class VaiAlCasinoGUI extends JFrame {
+    private ContoGiocatore fabio;
+    private ContoCasino casino;
+    private Dado dado;
 
-		Dado d = new Dado();  
-	
-		ContoGiocatore fabio = new ContoGiocatore(5000);   
-		ContoCasino casino = new ContoCasino(10000000);
+    private JTextField numeroField;
+    private JTextField sommaField;
+    private JLabel risultatoLabel;
+    private JLabel creditoLabel;
 
-		String verifica = "si";  
-		System.out.println("Benvenuto al casino':\n");
-		System.out.println("Scegli un numero da 1 a 6 e punta una somma di denaro");
-		System.out.println("Se una volta lanciato il dado escwe il numero su cui hai puntato, allora hai vinto");
+    public VaiAlCasinoGUI() {
+        fabio = new ContoGiocatore(5000);
+        casino = new ContoCasino(10000000);
+        dado = new Dado();
 
-		while ( verifica.equalsIgnoreCase("si"))
-		{
-			System.out.println("Scegli un numero:"); 
-			int num = in.nextInt();
-			if(num>0 && num<7)
-			{
-				System.out.println("Punta una somma di denaro ($): "); 
-				System.out.print("ricorda che il tuo credito è pari a " + fabio.getContoGiocatore());
-				System.out.println(" ");
-				double somma = in.nextDouble();
+        setTitle("Casino Game");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-				double contoG = fabio.getContoGiocatore();
-				double contoC = casino.getContoCasino();
-				double contoCc = contoC/5;
+        JPanel panel = new JPanel(new GridLayout(5, 2));
 
-				if ( somma <= contoG && somma <= contoCc)
-				{
-					System.out.println("Lancio il dado...");
-					int lancio = d.lancia();
-					System.out.print("Il risulatato del dado è :  ");
-					System.out.println(lancio);
+        panel.add(new JLabel("Scegli un numero (1-6):"));
+        numeroField = new JTextField();
+        panel.add(numeroField);
 
-					if ( lancio == num)  // Verifico se il giocatore vince o perde
-					{
-						System.out.println("Complimenti hai vinto");
-						fabio.aumentaContoGiocatore(somma);
-						casino.sottraiContoCasino(somma);
-					}else{
-						System.out.println("Peccato, hai perso");
-						casino.sommaContoCasino(somma);
-						fabio.sottraiContoGiocatore(somma);
-					}
+        panel.add(new JLabel("Punta una somma di denaro ($):"));
+        sommaField = new JTextField();
+        panel.add(sommaField);
 
-				}else{
-					System.out.println("Non puoi puntare quella somma");
-				}
+        JButton lanciaButton = new JButton("Lancia il dado");
+        lanciaButton.addActionListener(new LanciaDadoListener());
+        panel.add(lanciaButton);
 
-				double newSomma = fabio.getContoGiocatore();
+        risultatoLabel = new JLabel("Risultato:");
+        panel.add(risultatoLabel);
 
-				// Verifico se il giocatore può continuare a giocare
-				if ( newSomma > 0)
-				{
-					System.out.println("Vuoi continuare a scommettere?");
-					verifica = in.next();
-					System.out.print("Il tuo conto è pari a :  ");
-					System.out.println(fabio.getContoGiocatore());
-				}else{
-					System.out.println("CONTO ESAURITO");
-					System.out.println(fabio.getContoGiocatore());
-					verifica = "no";
-				}
-			}else{
-				System.out.println("NUMERO NON VALIDO"); //se sceglie numero > di 6
-                System.out.println("SCEGLI UN NUMERO DA 1 A 6");
-			}
-		}
-	}
+        creditoLabel = new JLabel("Credito: $" + fabio.getContoGiocatore());
+        panel.add(creditoLabel);
+
+        add(panel, BorderLayout.CENTER);
+    }
+
+    private class LanciaDadoListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                int num = Integer.parseInt(numeroField.getText());
+                double somma = Double.parseDouble(sommaField.getText());
+
+                if (num < 1 || num > 6) {
+                    JOptionPane.showMessageDialog(null, "Numero non valido. Scegli un numero da 1 a 6.");
+                    return;
+                }
+
+                if (somma > fabio.getContoGiocatore() || somma > casino.getContoCasino() / 5) {
+                    JOptionPane.showMessageDialog(null, "Non puoi puntare quella somma.");
+                    return;
+                }
+
+                int lancio = dado.lancia();
+                risultatoLabel.setText("Risultato: " + lancio);
+
+                if (lancio == num) {
+                    JOptionPane.showMessageDialog(null, "Complimenti hai vinto!");
+                    fabio.aumentaContoGiocatore(somma);
+                    casino.sottraiContoCasino(somma);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Peccato, hai perso.");
+                    casino.sommaContoCasino(somma);
+                    fabio.sottraiContoGiocatore(somma);
+                }
+
+                creditoLabel.setText("Credito: $" + fabio.getContoGiocatore());
+
+                if (fabio.getContoGiocatore() <= 0) {
+                    JOptionPane.showMessageDialog(null, "CONTO ESAURITO");
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(null, "Per favore inserisci valori validi.");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new VaiAlCasinoGUI().setVisible(true);
+            }
+        });
+    }
 }
-
